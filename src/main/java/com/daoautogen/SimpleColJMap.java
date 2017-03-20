@@ -5,15 +5,15 @@ package com.daoautogen;
  */
 public class SimpleColJMap implements ColumnJMap {
 
-    private DaoColumn.JDBCType jdbcType;
+    private JDBCType jdbcType;
     private Class<?> javaTypeClass;
     private String colName;
-    private DaoColumn.DaoColumnJavaType javaType;
+    private JavaType javaType;
     private String javaPropertyName;
     private int index;
 
-    public SimpleColJMap(DaoColumn.JDBCType jdbcType, Class<?> javaTypeClass, String colName,
-                         DaoColumn.DaoColumnJavaType javaType, String javaPropertyName, int index) {
+    public SimpleColJMap(JDBCType jdbcType, Class<?> javaTypeClass, String colName,
+                         JavaType javaType, String javaPropertyName, int index) {
         this.jdbcType = jdbcType;
         this.javaTypeClass = javaTypeClass;
         this.colName = colName;
@@ -23,7 +23,7 @@ public class SimpleColJMap implements ColumnJMap {
     }
 
     @Override
-    public DaoColumn.JDBCType getSqlType() {
+    public JDBCType getSqlType() {
         return jdbcType;
     }
 
@@ -33,7 +33,7 @@ public class SimpleColJMap implements ColumnJMap {
     }
 
     @Override
-    public DaoColumn.DaoColumnJavaType getJavaType() {
+    public JavaType getJavaType() {
         return javaType;
     }
 

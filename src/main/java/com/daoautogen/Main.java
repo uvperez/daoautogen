@@ -10,8 +10,8 @@ public class Main {
         String classPackage = "com.test.dao.usuario";
         DaoMetadataTable metadata = new DaoMetadataTable(tableName, classBaseName, classPackage);
 
-        DaoColumn col = new DaoColumn(true, DaoColumn.JDBCType.INTEGER,"USR_ID",0, DaoColumn.DaoColumnJavaType.INTEGER, "id",1);
-        DaoColumn col2 = new DaoColumn(false, DaoColumn.JDBCType.VARCHAR,"USR_USERNAME",150, DaoColumn.DaoColumnJavaType.STRING, "username",2);
+        DaoColumn col = new DaoColumn(true, JDBCType.INTEGER,"USR_ID",0, JavaType.INTEGER, "id",1);
+        DaoColumn col2 = new DaoColumn(false, JDBCType.VARCHAR,"USR_USERNAME",150, JavaType.STRING, "username",2);
 
         metadata.addColumn(col);
         metadata.addColumn(col2);
