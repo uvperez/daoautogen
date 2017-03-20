@@ -22,6 +22,13 @@
             <version>3.6.1</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.sun.codemodel/codemodel -->
+        <dependency>
+            <groupId>com.sun.codemodel</groupId>
+            <artifactId>codemodel</artifactId>
+            <version>2.6</version>
+        </dependency>
+
     </dependencies>
 
     <build>

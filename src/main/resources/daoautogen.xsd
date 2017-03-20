@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.daoautogen.com/2017"
+    xmlns:da="http://www.daoautogen.com/2017" >
+    <complexType name="TableType" >
+        <sequence>
+            <element name="tableName" type="string" />
+            <element name="classBaseName" type="string" />
+            <element name="classPackage" type="string" />
+            <element name="columns" maxOccurs="unbounded">
+                <complexType>
+                    <sequence>
+                        <element name="col" type="da:ColumnType" />
+                    </sequence>
+                </complexType>
+            </element>
+        </sequence>
+
+    </complexType>
+    <complexType name="ColumnType">
+        <sequence>
+            <element name="primaryKey" type="boolean" />
+            <element name="sqlType" type="string" />
+            <element name="colName" type="string" />
+            <element name="length" type="int" />
+            <element name="javaType" type="string" />
+            <element name="javaPropertyName" type="string" />
+            <element name="index" type="int" />
+        </sequence>
+    </complexType>
+
+    <element name="Table" type="da:TableType"></element>
+
+</schema>
+
+<!--
+
+
+private String tableName;
+private String classBaseName;
+private String classPackage;
+
+-->
