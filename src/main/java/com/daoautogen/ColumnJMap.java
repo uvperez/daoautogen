@@ -4,6 +4,7 @@ package com.daoautogen;
  * Created by uziel on 19/03/2017.
  */
 public interface ColumnJMap {
+
     JDBCType getSqlType();
 
     String getColName();
@@ -15,4 +16,6 @@ public interface ColumnJMap {
     int getIndex();
 
     Class<?> getJavaTypeClass();
+
+    public boolean isRequired();
 }

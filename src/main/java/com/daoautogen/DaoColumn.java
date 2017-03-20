@@ -10,23 +10,15 @@ import java.util.Date;
 public class DaoColumn implements ColumnJMap {
 
     private boolean primaryKey;
-    private JDBCType sqlType;
-    private String colName;
     private int length;
 
-    private JavaType javaType;
-    private String javaPropertyName;
-    private int index;
+    private SimpleColJMap colMap;
 
-    public DaoColumn(boolean primaryKey, JDBCType sqlType, String colName,
-                     int length, JavaType javaType, String javaPropertyName, int index) {
+    public DaoColumn(boolean primaryKey, JDBCType jdbcType, String colName,
+                     int length, JavaType javaType, String javaPropertyName, int index, boolean notNull) {
         this.primaryKey = primaryKey;
-        this.sqlType = sqlType;
-        this.colName = colName;
         this.length = length;
-        this.javaType = javaType;
-        this.javaPropertyName = javaPropertyName;
-        this.index = index;
+        this.colMap = new SimpleColJMap(jdbcType, javaType.getJavaTypeClass(), colName, javaType, javaPropertyName, index, notNull);
     }
 
     public boolean isPrimaryKey() {
@@ -35,12 +27,12 @@ public class DaoColumn implements ColumnJMap {
 
     @Override
     public JDBCType getSqlType() {
-        return sqlType;
+        return colMap.getSqlType();
     }
 
     @Override
     public String getColName() {
-        return colName;
+        return colMap.getColName();
     }
 
     public int getLength() {
@@ -49,41 +41,33 @@ public class DaoColumn implements ColumnJMap {
 
     @Override
     public JavaType getJavaType() {
-        return javaType;
+        return colMap.getJavaType();
     }
 
     @Override
     public String getJavaPropertyName() {
-        return javaPropertyName;
+        return colMap.getJavaPropertyName();
     }
 
     @Override
     public int getIndex() {
-        return index;
+        return colMap.getIndex();
     }
 
     @Override
     public Class<?> getJavaTypeClass() {
-        switch (javaType) {
-            case INTEGER:
-                return Integer.class;
-            case STRING:
-                return String.class;
-            case BIGDECIMAL:
-                return BigDecimal.class;
-            case LONG:
-                return Long.class;
-            case DATE:
-                return Date.class;
-            default:
-                throw new IllegalStateException("java type no soportado");
-        }
+        return colMap.getJavaTypeClass();
+    }
+
+    @Override
+    public boolean isRequired() {
+        return colMap.isRequired();
     }
 
     public String getPreparedStatementSetData(int index){
-        switch (javaType) {
-            case STRING: return "ps.setString("+index+", dto.get" + Utils.getCamelCaseName(javaPropertyName) + "());";
-            case INTEGER: return "ps.setInt("+index+", dto.get" + Utils.getCamelCaseName(javaPropertyName) + "());";
+        switch (colMap.getJavaType()) {
+            case STRING: return "ps.setString("+index+", dto.get" + Utils.getCamelCaseName(colMap.getJavaPropertyName()) + "());";
+            case INTEGER: return "ps.setInt("+index+", dto.get" + Utils.getCamelCaseName(colMap.getJavaPropertyName()) + "());";
             default: return null;
         }
     }
@@ -92,12 +76,8 @@ public class DaoColumn implements ColumnJMap {
     public String toString() {
         final StringBuilder sb = new StringBuilder("DaoColumn{");
         sb.append("primaryKey=").append(primaryKey);
-        sb.append(", sqlType=").append(sqlType);
-        sb.append(", colName='").append(colName).append('\'');
         sb.append(", length=").append(length);
-        sb.append(", javaType=").append(javaType);
-        sb.append(", javaPropertyName='").append(javaPropertyName).append('\'');
-        sb.append(", index=").append(index);
+        sb.append(", colMap=").append(colMap);
         sb.append('}');
         return sb.toString();
     }

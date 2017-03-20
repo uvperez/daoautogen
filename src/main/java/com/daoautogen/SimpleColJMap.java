@@ -11,15 +11,17 @@ public class SimpleColJMap implements ColumnJMap {
     private JavaType javaType;
     private String javaPropertyName;
     private int index;
+    private boolean required;
 
     public SimpleColJMap(JDBCType jdbcType, Class<?> javaTypeClass, String colName,
-                         JavaType javaType, String javaPropertyName, int index) {
+                         JavaType javaType, String javaPropertyName, int index, boolean required) {
         this.jdbcType = jdbcType;
         this.javaTypeClass = javaTypeClass;
         this.colName = colName;
         this.javaType = javaType;
         this.javaPropertyName = javaPropertyName;
         this.index = index;
+        this.required = required;
     }
 
     @Override
@@ -51,4 +53,11 @@ public class SimpleColJMap implements ColumnJMap {
     public Class<?> getJavaTypeClass() {
         return javaTypeClass;
     }
+
+    @Override
+    public boolean isRequired() {
+        return required;
+    }
+
+
 }
