@@ -7,7 +7,6 @@ import com.sun.codemodel.JBlock;
  */
 public interface JdbcTransform {
 
-    public void makeSetsDirectStatements(JBlock block, String stmtVarName, ColumnJMap col);
-
+    public void makeSetsDirectStatements(JBlock block, String stmtVarName, ColumnJMap col, int index);
 
 }

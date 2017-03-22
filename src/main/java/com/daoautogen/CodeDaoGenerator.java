@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -24,7 +23,7 @@ public class CodeDaoGenerator {
     public void generateDao(DaoMetadataTable metadata) {
         try {
             JPackage jp = jCodeModel._package(metadata.getClassPackage());
-            JDefinedClass dtoClass = jp._class(metadata.getClassBaseName() + "DTO");
+            JDefinedClass dtoClass = jp._class(metadata.getClassBaseName() + "DbDto");
             JDefinedClass daoInterface = jp._interface(metadata.getClassBaseName() + "DAO");
             JDefinedClass daoImplClass = jp._class(metadata.getClassBaseName() + "DAOImpl");
             daoImplClass._implements(daoInterface);
@@ -35,11 +34,11 @@ public class CodeDaoGenerator {
 
                 JFieldVar field = dtoClass.field(JMod.PRIVATE, column.getJavaTypeClass(), column.getJavaPropertyName());
 
-                JMethod getMethod = dtoClass.method(JMod.PUBLIC, column.getJavaTypeClass(), "get" + getCamelCaseName(column.getJavaPropertyName()));
+                JMethod getMethod = dtoClass.method(JMod.PUBLIC, column.getJavaTypeClass(), "get" + Utils.getCamelCaseName(column.getJavaPropertyName()));
                 JBlock jgetBody = getMethod.body();
                 jgetBody._return(field);
 
-                JMethod setMethod = dtoClass.method(JMod.PUBLIC, jCodeModel.VOID, "set" + getCamelCaseName(column.getJavaPropertyName()));
+                JMethod setMethod = dtoClass.method(JMod.PUBLIC, jCodeModel.VOID, "set" + Utils.getCamelCaseName(column.getJavaPropertyName()));
                 setMethod.param(column.getJavaTypeClass(), column.getJavaPropertyName());
                 JBlock jsetBody = setMethod.body();
                 jsetBody.directStatement("this." + column.getJavaPropertyName() + " = " + column.getJavaPropertyName() + ";");
@@ -50,6 +49,7 @@ public class CodeDaoGenerator {
             modificaClaseImpl(daoImplClass, dtoClass, metadata);
 
             // modifica interfaz DAO
+            modificaInterfaz(daoInterface, dtoClass, metadata);
 
             jCodeModel.build(new File("src/test/java"));
 
@@ -62,9 +62,22 @@ public class CodeDaoGenerator {
 
     }
 
+    private void modificaInterfaz(JDefinedClass daoInterface, JDefinedClass dtoClass, DaoMetadataTable metadata) {
+        JMethod insert = daoInterface.method(JMod.PUBLIC, jCodeModel.VOID, "insert");
+        insert.param(dtoClass, "dto");
+        insert.param(Connection.class, "connection");
+
+        JMethod update = daoInterface.method(JMod.PUBLIC, jCodeModel.VOID, "update");
+        update.param(dtoClass, "dto");
+        update.param(Connection.class, "connection");
+    }
+
+
     private void modificaClaseImpl(JDefinedClass daoImplClass, JDefinedClass dtoClass, DaoMetadataTable metadata) {
+
         {
             JMethod insert = daoImplClass.method(JMod.PUBLIC, jCodeModel.VOID, "insert");
+            insert.annotate(Override.class);
             insert.param(dtoClass, "dto");
             insert.param(Connection.class, "connection");
             JBlock body = insert.body();
@@ -74,7 +87,7 @@ public class CodeDaoGenerator {
             JBlock bodyJTry = jTryBlock.body();
             bodyJTry.directStatement("String sqlInsert = \"" + getInsertString(metadata) + "\";");
             bodyJTry.directStatement("ps = connection.prepareStatement(sqlInsert);");
-            registerInputParametersPs(bodyJTry,metadata);
+            registerInputInsertParametersPs(bodyJTry,metadata);
             bodyJTry.directStatement("ps.executeUpdate();");
 
             JClass refSqlExc = jCodeModel.ref(SQLException.class);
@@ -90,17 +103,71 @@ public class CodeDaoGenerator {
 
         {
             JMethod update = daoImplClass.method(JMod.PUBLIC, jCodeModel.VOID, "update");
+            update.annotate(Override.class);
             update.param(dtoClass, "dto");
             update.param(java.sql.Connection.class, "connection");
+
+            JBlock body = update.body();
+            JClass refPs = jCodeModel.ref(PreparedStatement.class);
+            body.decl(refPs, "ps", JExpr._null());
+            JTryBlock jTryBlock = body._try();
+            JBlock bodyJTry = jTryBlock.body();
+            bodyJTry.directStatement("String sqlUpdate = \"" + getUpdateString(metadata) + "\";");
+            bodyJTry.directStatement("ps = connection.prepareStatement(sqlUpdate);");
+            registerInputUpdateParametersPs(bodyJTry,metadata);
+            bodyJTry.directStatement("ps.executeUpdate();");
+
+            JClass refSqlExc = jCodeModel.ref(SQLException.class);
+            JCatchBlock jCatchBlock = jTryBlock._catch(refSqlExc);
+            jCatchBlock.param("ex");
+            JBlock aFinally = jTryBlock._finally();
+            aFinally.directStatement("try { ");
+            aFinally.directStatement("  if (ps != null) {");
+            aFinally.directStatement("      ps.close();");
+            aFinally.directStatement("  }");
+            aFinally.directStatement("} catch (SQLException e) {}");
         }
 
     }
 
-    private void registerInputParametersPs(JBlock bodyJTry, DaoMetadataTable metadata) {
+    private void registerInputUpdateParametersPs(JBlock bodyJTry, DaoMetadataTable metadata) {
         Map<Integer, DaoColumn> map = metadata.getMap();
+        JdbcTransformImpl transform = new JdbcTransformImpl();
+        int index = 1;
+        for (int i = map.size(); i > 0; i--) {
+            DaoColumn daoColumn = map.get(i);
+            transform.makeSetsDirectStatements(bodyJTry, "ps", daoColumn, index);
+            index++;
+        }
+    }
+
+    private String getUpdateString(DaoMetadataTable metadata) {
+        Map<Integer, DaoColumn> map = metadata.getMap();
+        StringBuilder sb = new StringBuilder();
+        sb.append("UPDATE ");
+        sb.append(metadata.getTableName());
+        sb.append(" SET ");
+        for (int i = map.size(); i > 1; i--) {
+            DaoColumn daoColumn = map.get(i);
+            sb.append(daoColumn.getColName());
+            sb.append(" = ? ");
+            if (i != 2) {
+                sb.append(",");
+            }
+        }
+        sb.append(" WHERE ");
+        DaoColumn daoColumn = map.get(1);
+        sb.append(daoColumn.getColName());
+        sb.append(" = ? ");
+        return sb.toString();
+    }
+
+    private void registerInputInsertParametersPs(JBlock bodyJTry, DaoMetadataTable metadata) {
+        Map<Integer, DaoColumn> map = metadata.getMap();
+        JdbcTransformImpl transform = new JdbcTransformImpl();
         for (int i = 1; i <= map.size(); i++) {
             DaoColumn daoColumn = map.get(i);
-            bodyJTry.directStatement(daoColumn.getPreparedStatementSetData(i));
+            transform.makeSetsDirectStatements(bodyJTry, "ps", daoColumn, i);
         }
     }
 
@@ -130,11 +197,6 @@ public class CodeDaoGenerator {
         sb.append(")");
 
         return sb.toString();
-    }
-
-    static String getCamelCaseName(String javaPropertyName) {
-        return javaPropertyName.substring(0, 1).toUpperCase() +
-                javaPropertyName.substring(1, javaPropertyName.length());
     }
 
 }
